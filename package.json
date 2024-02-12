@@ -47,6 +47,7 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^20.11.17",
     "inibase": "1.0.0-rc.45",
     "typescript": "^5.3.3"
   }

@@ -1,10 +1,10 @@
-[![Inison banner](./.github/assets/banner.jpg)](https://github.com/inicontent/inison)
+[![Inidot banner](./.github/assets/banner.jpg)](https://github.com/inicontent/inidot)
 
-# Inison :pencil:
+# Inidot :pencil:
 
-[![npmjs](https://img.shields.io/npm/dm/inison.svg?style=flat)](https://www.npmjs.org/package/inibase) [![License](https://img.shields.io/github/license/inicontent/inison.svg?style=flat&colorA=18181B&colorB=28CF8D)](./LICENSE) [![Activity](https://img.shields.io/github/commit-activity/m/inicontent/inison)](https://github.com/inicontent/inison/pulse) [![GitHub stars](https://img.shields.io/github/stars/inicontent/inison?style=social)](https://github.com/inicontent/inison)
+[![npmjs](https://img.shields.io/npm/dm/inidot.svg?style=flat)](https://www.npmjs.org/package/inidot) [![License](https://img.shields.io/github/license/inicontent/inidot.svg?style=flat&colorA=18181B&colorB=28CF8D)](./LICENSE) [![Activity](https://img.shields.io/github/commit-activity/m/inicontent/inidot)](https://github.com/inicontent/inidot/pulse) [![GitHub stars](https://img.shields.io/github/stars/inicontent/inidot?style=social)](https://github.com/inicontent/inidot)
 
-> An alternative to JSON, aiming to reduce disk usage by storing decoded data and eliminating double-quotes :fire:
+> Get, set, or delete a property from a nested object using a dot path :fire:
 
 ## Features
 
@@ -13,7 +13,6 @@
 - **TypeScript** :large_blue_diamond:
 - **Super-Fast** :zap:
 - **Suitable for large data** :page_with_curl:
-- **Support Compression** :eight_spoked_asterisk:
 - **Safe** :lock:
 - **Easy to use** :bread:
 - **...** and much more :rocket:
@@ -21,28 +20,54 @@
 ## Usage
 
 ```js
-import Inison from "inison";
+import Inidot from "inidot";
+// or
+import {
+  toDotNotation,
+  getProperty,
+  setProperty,
+  deleteProperty,
+  hasProperty
+} from "inidot";
+
 const myObj = {
   name: "Jo,hn",
   age: 21,
-  city: "New York",
+  address: {
+    city: "New York",
+    zip: 65221,
+  },
   hobbies: ["Reading", "Tra[veling", ["test", "test2", { test: true }]],
 };
 
-// Stringify the object
-const stringifiedObj = Inison.stringify(myObj);
-// {name:Jo\,hn,age:21,city:New York,hobbies:[Reading,Tra\veking,[test,test2,{test:true}]]}
+// Get Property by path
+Inidot.getProperty(myObj, "address.city");
+// New York
 
-// Unstringify the stringified object
-const unstringifiedObj = Inison.unstringify(stringifiedObj);
+// Get Unexisted Property by path
+Inidot.getProperty(myObj, "address.country");
+// undefined
+
+// Define a default value
+Inidot.getProperty(myObj, "address.city", "Morocco");
+// Morocco
 ```
 
-If you like Inison, please sponsor: [GitHub Sponsors](https://github.com/sponsors/inicontent) || [Paypal](https://paypal.me/KarimAmahtil).
+### Selector Examples
+
+```
+- `obj.value` => `['obj', 'value']`
+- `obj.ary.0.value` => `['obj', 'ary', '0', 'value']`
+- `obj.ary.0.va\\.lue` => `['obj', 'ary', '0', 'va.lue']`
+- `obj.ary.*.value` => `['obj', 'ary', '*', 'value']`
+```
+
+If you like Inidot, please sponsor: [GitHub Sponsors](https://github.com/sponsors/inicontent) || [Paypal](https://paypal.me/KarimAmahtil).
 
 ## Install
 
 ```js
-<npm|pnpm|yarn> install inison
+<npm|pnpm|yarn> install inidot
 ```
 
 ## License

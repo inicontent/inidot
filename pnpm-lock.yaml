@@ -5,11 +5,25 @@ settings:
   excludeLinksFromLockfile: false
 
 devDependencies:
+  inibase:
+    specifier: 1.0.0-rc.45
+    version: 1.0.0-rc.45
   typescript:
     specifier: ^5.3.3
     version: 5.3.3
 
 packages:
+
+  /inibase@1.0.0-rc.45:
+    resolution: {integrity: sha512-i6qhAn+TnI2Oiz8nfbi7LZUKzNK0RiCJBvKIaOuQHGjDxU11X5zltrjKmRRsdtqYkqa3Ye6673rk6MqQwIFYAA==}
+    engines: {node: '>=16'}
+    dependencies:
+      inison: 1.0.0-rc.2
+    dev: true
+
+  /inison@1.0.0-rc.2:
+    resolution: {integrity: sha512-Av49Yx5EP6f2ezuEDDLHSlED0+c2d5oJMUn+F4arA18EsbrI6jw4Ql+esqWsh4yvqIEGDbM4myFWbvhkx0oNlQ==}
+    dev: true
 
   /typescript@5.3.3:
     resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}

@@ -1,147 +1,216 @@
-export default class Inison {
-  private static specialCharsArr = [",", ":", "[", "]", "{", "}"];
-  private static specialChars = new Set(Inison.specialCharsArr);
-  private static index: number;
-  private static s: string;
+import { isArrayOfObjects, isNumber } from "inibase/utils";
+/**
+ * Disallowed keys.
+ */
+const disallowed: string[] = ["__proto__", "prototype", "constructor"];
 
-  static stringify(obj: any): string {
-    if (obj === undefined || obj === null) return String(obj);
+/**
+ * Converts keys of an object to dot notation recursively.
+ *
+ * @param object - The input object to convert.
+ * @param prefix - The prefix to use for the current level of recursion (default is an empty string).
+ * @returns A new object with keys converted to dot notation.
+ */
+export const toDotNotation = (object: any, prefix?: string): any =>
+  Object.keys(object || {}).reduce((acc, key) => {
+    const value = object[key];
+    const outputKey = prefix ? `${prefix}.${key}` : `${key}`;
 
-    if (Array.isArray(obj))
-      return "[" + obj.map(Inison.stringify).join(",") + "]";
-
-    if (typeof obj === "object" && obj !== null) {
-      const objKeys = Object.keys(obj);
-      let result: string[] = [];
-
-      for (const key of objKeys)
-        result.push(`${key}:${Inison.stringify(obj[key])}`);
-
-      return `{${result.join(",")}}`;
-    }
-    obj = String(obj);
-    return Inison.specialCharsArr.some((char) => obj.indexOf(char))
-      ? Inison.escapeSpecialChars(obj)
-      : obj;
-  }
-
-  static unstringify(s: string): any {
-    if (s === "null") return null;
-    if (s === "undefined") return undefined;
-
-    Inison.index = 0;
-    Inison.s = s;
-
-    return Inison.parseValue();
-  }
-
-  private static parseArray(): any[] {
-    const array: any[] = [];
-    const len = Inison.s.length;
-
-    Inison.index++; // skip '['
-    while (Inison.index < len && Inison.s[Inison.index] !== "]") {
-      array.push(Inison.parseValue());
-      if (Inison.s[Inison.index] === ",") Inison.index++; // skip ','
-    }
-    Inison.index++; // skip ']'
-    return array;
-  }
-
-  private static parseObject(): any {
-    const obj: any = {};
-    const len = Inison.s.length;
-
-    Inison.index++; // skip '{'
-    while (Inison.index < len && Inison.s[Inison.index] !== "}") {
-      const [key, value] = Inison.parseKeyValue();
-      obj[key] = value;
-
-      if (Inison.s[Inison.index] === ",") Inison.index++; // skip ','
-    }
-    Inison.index++; // skip '}'
-    return obj;
-  }
-
-  private static parseKeyValue(): [any, any] {
-    const key = Inison.parseValue();
-
-    if (Inison.s[Inison.index] !== ":")
-      throw new Error('Expected ":" after key');
-
-    Inison.index++; // skip ':'
-    const value = Inison.parseValue();
-
-    return [key, value];
-  }
-
-  private static parseValue(): any {
-    const len = Inison.s.length;
-    const start = Inison.index;
-
-    if (Inison.s[Inison.index] === "[" || Inison.s[Inison.index] === "{")
-      return Inison.s[Inison.index] === "["
-        ? Inison.parseArray()
-        : Inison.parseObject();
-
-    while (
-      Inison.index < len &&
-      !Inison.specialChars.has(Inison.s[Inison.index])
+    // NOTE: remove `&& (!Array.isArray(value) || value.length)` to exclude empty arrays from the output
+    if (
+      value &&
+      typeof value === "object" &&
+      (!Array.isArray(value) || value.length)
     )
-      Inison.index +=
-        Inison.s[Inison.index] === "\\" &&
-        Inison.specialChars.has(Inison.s[Inison.index + 1])
-          ? 2
-          : 1; // Skip both '\\' and ','
+      return { ...acc, ...toDotNotation(value, outputKey) };
 
-    const parsedValue = Inison.s.slice(start, Inison.index);
+    return { ...acc, [outputKey]: value };
+  }, {});
 
-    if (parsedValue === "") return null;
-    else if (parsedValue.indexOf("\\") !== -1)
-      return Inison.unescapeSpecialChars(parsedValue);
-    else if (parsedValue === "false") return false;
-    else if (parsedValue === "null") return null;
-    else if (parsedValue === "undefined") return undefined;
-    else if (parsedValue === "true") return true;
+/**
+ * Get object property value.
+ *
+ * @param obj Object to get value from.
+ * @param path Dot notation string.
+ * @param value Optional default value to return if path is not found.
+ */
+export function getProperty(obj: any, path: string, value?: any): any {
+  const defaultValue: any = value !== undefined ? value : undefined;
 
-    const numParsedValue = Number(parsedValue);
+  const parts: string[] = getParts(path);
 
-    // Check if the parsed value is a number and convert it
-    if (Number.isInteger(numParsedValue) && parsedValue !== null)
-      return numParsedValue;
+  if (parts.length === 0) return;
 
-    return parsedValue;
+  for (const key of parts) {
+    if (key === "*") continue;
+
+    if (Array.isArray(obj) && !isNumber(key)) obj = extractArray(obj, key);
+    else obj = obj[key];
+
+    if (obj === undefined || obj === null) break;
   }
 
-  private static unescapeSpecialChars(value: string): string {
-    let unescapedValue = "";
-    const len = value.length;
+  return obj === undefined ? defaultValue : obj;
+}
 
-    for (let i = 0; i < len; i++) {
-      if (value[i] === "\\" && i + 1 < len) {
-        const nextChar = value[i + 1];
-        if (Inison.specialChars.has(nextChar)) {
-          unescapedValue += nextChar;
-          i++;
-          continue;
-        }
-      }
-      unescapedValue += value[i];
+/**
+ * Set object property value.
+ *
+ * @param obj Object to set value for.
+ * @param path Dot notation string.
+ * @param value Value to set at path.
+ */
+export function setProperty(obj: any, path: string, value: any): void {
+  const parts: string[] = getParts(path);
+
+  if (parts.length === 0) return;
+
+  const len: number = parts.length;
+
+  for (let i: number = 0; i < len; i++) {
+    const key: string = parts[i];
+
+    // last part in path
+    if (i === len - 1) {
+      (obj as any)[key] = value;
+      return;
     }
 
-    return unescapedValue;
-  }
+    if (key === "*" && Array.isArray(obj)) {
+      const remaining: string = parts.slice(i + 1).join(".");
 
-  private static escapeSpecialChars(value: string): string {
-    let escapedValue = "",
-      len = value.length;
+      // recurse to array objects
+      for (const item of obj) setProperty(item, remaining, value);
 
-    for (let i = 0; i < len; i++) {
-      const char = value[i];
-      if (Inison.specialChars.has(char)) escapedValue += "\\";
-      escapedValue += char;
+      return;
     }
 
-    return escapedValue;
+    if (obj[key] === undefined) obj[key] = {};
+
+    obj = obj[key];
   }
+}
+
+/**
+ * Check if object has property value.
+ *
+ * @param obj Object to set value for.
+ * @param path Dot notation string.
+ */
+export function hasProperty(obj: object, path: string): boolean {
+  const value: any = getProperty(obj, path);
+  return value !== undefined;
+}
+
+/**
+ * Delete a property from an object.
+ *
+ * @param obj Object to set value for.
+ * @param path Dot notation string.
+ */
+export function deleteProperty(obj: any, path: string): void {
+  const parts: string[] = getParts(path);
+
+  if (parts.length === 0) return;
+
+  const len: number = parts.length;
+
+  for (let i: number = 0; i < len; i++) {
+    const key: string = parts[i];
+
+    if (key === "*") {
+      if (isArrayOfObjects(obj))
+        obj.forEach((_: any, index: number) => {
+          deleteProperty(obj[index], parts.slice(i + 1).join("."));
+        });
+
+      continue;
+    }
+
+    // last part in path
+    if (i === len - 1) {
+      if (isNumber(key)) obj.splice(Number(key), 1);
+      else delete obj[key];
+      return;
+    }
+
+    obj = obj[key];
+  }
+}
+
+/**
+ * Get all dot notations paths from an object.
+ *
+ * @param obj Object to get paths for.
+ */
+export function paths(obj: object): string[] {
+  return _paths(obj, []);
+}
+
+/**
+ * Split a dot notation string into parts.
+ *
+ * Examples:
+ * - `obj.value` => `['obj', 'value']`
+ * - `obj.ary.0.value` => `['obj', 'ary', '0', 'value']`
+ * - `obj.ary.0.va\\.lue` => `['obj', 'ary', '0', 'va.lue']`
+ * - `obj.ary.*.value` => `['obj', 'ary', '*', 'value']`
+ *
+ * @param path Dot notation string.
+ */
+function getParts(path: string): string[] {
+  const parts: string[] = path
+    .split(/(?<!\\)\./)
+    .map((segment) => segment.replace(/\\./g, "."))
+    .filter((item) => !!item);
+
+  if (parts.some((x) => disallowed.indexOf(x) !== -1)) return [];
+
+  return parts;
+}
+
+/**
+ * Internal recursive method to navigate assemble possible paths.
+ *
+ * @param obj Object to get paths for.
+ * @param lead Array of leading parts for the current iteration.
+ */
+function _paths(obj: any, lead: string[]): string[] {
+  let output: string[] = [];
+
+  for (const key in obj) {
+    if (obj[key] === undefined) continue;
+    else if (
+      typeof obj[key] === "object" &&
+      Object.prototype.toString.call(obj[key]) === "[object Object]"
+    ) {
+      // recurse to child object
+      lead.push(key);
+      output = output.concat(_paths(obj[key], lead));
+
+      // reset path lead for next object
+      lead.pop();
+    } else {
+      const path: string = lead.length ? `${lead.join(".")}.${key}` : key;
+      output.push(path);
+    }
+  }
+
+  return output;
+}
+
+const extractArray = (arr: any[], key: string): any => {
+  return arr.map((item) => {
+    if (item === undefined || item === null) return item as null | undefined;
+    else if (Array.isArray(item)) return extractArray(item, key);
+    else return item[key];
+  });
+};
+
+export default class Inidots {
+  static toDotNotation = toDotNotation;
+  static getProperty = getProperty;
+  static setProperty = setProperty;
+  static deleteProperty = deleteProperty;
+  static hasProperty = hasProperty;
 }

@@ -1,36 +1,35 @@
 {
-  "name": "inison",
-  "version": "1.0.0-rc.2",
+  "name": "inidot",
+  "version": "1.0.0-rc.1",
   "author": {
     "name": "Karim Amahtil",
     "email": "karim.amahtil@gmail.com"
   },
-  "repository": "inicontent/inison",
+  "repository": "inicontent/inidot",
   "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js"
   },
   "bugs": {
-    "url": "https://github.com/inicontent/inison/issues"
+    "url": "https://github.com/inicontent/inidot/issues"
   },
-  "description": "An alternative to JSON, aiming to reduce disk usage by storing decoded data and eliminating double-quotes",
+  "description": "Get, set, or delete a property from a nested object using a dot path",
   "files": [
     "/dist"
   ],
   "funding": "https://github.com/sponsors/inicontent",
-  "homepage": "https://github.com/inicontent/inison#readme",
+  "homepage": "https://github.com/inicontent/inidot#readme",
   "keywords": [
-    "json",
-    "cson",
-    "hocon",
-    "bson",
-    "avro",
-    "messagepack",
-    "protobuf",
-    "json5",
-    "jsonc",
-    "xml",
-    "yaml"
+    "inibase",
+    "object",
+    "dot",
+    "bracket",
+    "notation",
+    "nested",
+    "path",
+    "parse",
+    "string",
+    "json"
   ],
   "license": "MIT",
   "scripts": {
@@ -48,6 +47,7 @@
     }
   },
   "devDependencies": {
+    "inibase": "1.0.0-rc.45",
     "typescript": "^5.3.3"
   }
 }

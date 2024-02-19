@@ -129,8 +129,10 @@ export function deleteProperty(obj: any, path: string): void {
 
     // last part in path
     if (i === len - 1) {
-      if (isNumber(key)) obj.splice(Number(key), 1);
-      else delete obj[key];
+      if (obj) {
+        if (isNumber(key) && Array.isArray(obj)) obj.splice(Number(key), 1);
+        else if (typeof obj === "object") delete obj[key];
+      }
       return;
     }
 
